@@ -44,6 +44,9 @@ def field_level_view(parsed_data, field):
     
     return styled_df, df
 
+st.set_page_config(page_title="Fact Comparison by Field", layout="wide")
+st.sidebar.title("Fact Comparison by Field")
+
 st.title("LLM Output Comparator")
 
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
@@ -51,6 +54,18 @@ uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 if uploaded_file:
     df = load_data(uploaded_file)
     parsed_data, fields = parse_json(df)
+    
+    # Summary Table
+    st.subheader("Summary of Facts Count")
+    summary_data = {}
+    for field in fields:
+        if field.lower() == "description":  # Ignore description field
+            continue
+        _, field_df = field_level_view(parsed_data, field)
+        summary_data[field] = field_df.iloc[:, 1:].apply(lambda col: (col != "N/A").sum()).to_dict()
+    
+    summary_df = pd.DataFrame(summary_data).T
+    st.dataframe(summary_df)
     
     # Field Level View for all fields
     st.subheader("Field Level View for All Fields")
@@ -63,5 +78,5 @@ if uploaded_file:
         
         # Count non-NA values
         non_na_counts = field_df.iloc[:, 1:].apply(lambda col: (col != "N/A").sum())
-        st.write("#### Facts Identified:")
+        st.write("#### Count of Non-NA Values:")
         st.write(non_na_counts.to_frame().T)
