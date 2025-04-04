@@ -55,7 +55,7 @@ uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 if uploaded_file:
     df = load_data(uploaded_file)
     parsed_data, fields = parse_json(df)
-    st.write(parsed_data)
+    st.write(df)
     
     # Summary Table
     st.subheader("Summary of Facts Count")
