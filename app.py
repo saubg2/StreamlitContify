@@ -30,22 +30,19 @@ def field_level_view(parsed_data, field):
         result[model] = [response.get(field, "N/A") for response in responses]
     df = pd.DataFrame(result)
     
-    # Highlight discrepancies
-    def highlight_differences(row):
-        unique_values = row[1:].unique()  # Ignore Story Number column
+    # Highlight filled and empty values
+    def highlight_values(row):
         colors = [""]  # Keep Story Number column uncolored
         for val in row[1:]:
             if val == "N/A":
-                colors.append("background-color: lightgrey")
-            elif len(unique_values) == 1:
-                colors.append("background-color: lightgreen")  # All values match
+                colors.append("background-color: lightgrey")  # Mark N/A as grey
             else:
-                colors.append("background-color: lightpink")  # Values differ (changed to light pink)
+                colors.append("background-color: lightgreen")  # Mark filled values as green
         return colors
     
-    styled_df = df.style.apply(highlight_differences, axis=1)
+    styled_df = df.style.apply(highlight_values, axis=1)
     
-    return styled_df
+    return styled_df, df
 
 st.title("LLM Output Comparator")
 
@@ -61,5 +58,10 @@ if uploaded_file:
         if field.lower() == "description":  # Do not display table for description field
             continue
         st.write(f"### Field: {field}")
-        field_df = field_level_view(parsed_data, field)
-        st.dataframe(field_df)
+        styled_df, field_df = field_level_view(parsed_data, field)
+        st.dataframe(styled_df)
+        
+        # Count non-NA values
+        non_na_counts = field_df.iloc[:, 1:].apply(lambda col: (col != "N/A").sum())
+        st.write("#### Facts Identified:")
+        st.write(non_na_counts.to_frame().T)
