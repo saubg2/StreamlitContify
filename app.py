@@ -17,6 +17,7 @@ def parse_json(df):
             try:
                 json_str = x.replace("'", '"')  # Fix single quotes issue
                 parsed_obj = json.loads(json_str)
+                parsed_obj.pop("description", None)  # Skip 'description' key if present
                 parsed_data[model].append(parsed_obj)
                 fields.update(parsed_obj.keys())
             except json.JSONDecodeError:
@@ -59,8 +60,6 @@ if uploaded_file:
     st.subheader("Summary of Facts Count")
     summary_data = {}
     for field in fields:
-        if field.lower() == "description":  # Ignore description field
-            continue
         _, field_df = field_level_view(parsed_data, field)
         summary_data[field] = field_df.iloc[:, 1:].apply(lambda col: (col != "N/A").sum()).to_dict()
     
@@ -70,8 +69,6 @@ if uploaded_file:
     # Field Level View for all fields
     st.subheader("Field Level View for All Fields")
     for field in fields:
-        if field.lower() == "description":  # Do not display table for description field
-            continue
         st.write(f"### Field: {field}")
         styled_df, field_df = field_level_view(parsed_data, field)
         st.dataframe(styled_df)
