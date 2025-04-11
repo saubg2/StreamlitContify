@@ -4,10 +4,6 @@ import ast
 
 def load_data(file):
     df = pd.read_csv(file, skipinitialspace=True, engine='python')
-    return df
-
-def load_data(file):
-    df = pd.read_csv(file, skipinitialspace=True, engine='python')
 
     # Clean model columns by stripping out 'description' key before parsing
     for col in df.columns:
