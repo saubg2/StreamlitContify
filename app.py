@@ -5,61 +5,43 @@ import ast
 
 def load_data(file):
     df = pd.read_csv(file, skipinitialspace=True, engine='python')
-
-    for col in df.columns:
-        if col.lower() in ["description", "story number"]:
-            continue
-
-        cleaned_col = []
-        for val in df[col]:
-            if pd.isna(val):
-                cleaned_col.append(val)
-                continue
-            if isinstance(val, str) and val.strip().startswith("{"):
-                try:
-                    parsed = ast.literal_eval(val)
-                    if isinstance(parsed, dict):
-                        parsed.pop("description", None)
-                        cleaned_col.append(str(parsed))
-                    else:
-                        cleaned_col.append(val)
-                except Exception:
-                    cleaned_col.append(val)
-            else:
-                cleaned_col.append(val)
-
-        df[col] = cleaned_col
-
     return df
+
 
 def parse_json(df):
     parsed_data = {}
     fields = set()
+    
     for model in df.columns:
-        if model.lower() == "description":
-            continue  # Skip description column
+        if model.lower() in ["description", "story number"]:
+            continue  # Skip description and story number columns
+
         parsed_data[model] = []
         for x in df[model]:
             if pd.isna(x):
                 parsed_data[model].append({})
                 continue
+
             try:
                 parsed_obj = ast.literal_eval(x)
                 if isinstance(parsed_obj, dict):
-                    parsed_obj.pop("description", None)  # Just in case any survive
+                    # Skip inner 'description' key
+                    parsed_obj.pop("description", None)
                     parsed_data[model].append(parsed_obj)
-                    fields.update(parsed_obj.keys())
+                    fields.update(k for k in parsed_obj.keys() if k != "description")
                 else:
                     parsed_data[model].append({})
-            except (ValueError, SyntaxError):
+            except Exception:
                 parsed_data[model].append({})
-    fields.discard("description")
+
     return parsed_data, sorted(fields)
+
 
 def field_level_view(parsed_data, field):
     result = {"Story Number": list(range(len(next(iter(parsed_data.values())))))}
     for model, responses in parsed_data.items():
         result[model] = [response.get(field, "N/A") for response in responses]
+
     df = pd.DataFrame(result)
 
     def highlight_values(row):
@@ -74,6 +56,8 @@ def field_level_view(parsed_data, field):
     styled_df = df.style.apply(highlight_values, axis=1)
     return styled_df, df
 
+
+# Streamlit UI
 st.set_page_config(page_title="Fact Comparison by Field", layout="wide")
 st.sidebar.title("Fact Comparison by Field")
 
@@ -84,7 +68,8 @@ uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 if uploaded_file:
     df = load_data(uploaded_file)
     parsed_data, fields = parse_json(df)
-    st.write(df)
+    st.write("Raw Uploaded Data")
+    st.dataframe(df)
 
     st.subheader("Summary of Facts Count")
     summary_data = {}
