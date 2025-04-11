@@ -25,7 +25,7 @@ def parse_json(df):
                         if isinstance(v, list):
                             parsed_obj[k] = "; ".join(str(i) for i in v)
                     parsed_data[model].append(parsed_obj)
-                fields.update(parsed_obj.keys())
+                    fields.update(parsed_obj.keys())
                 else:
                     parsed_data[model].append({})
             except (ValueError, SyntaxError):
