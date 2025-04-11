@@ -33,6 +33,7 @@ def load_data(file):
     return df
 
 
+
 def field_level_view(parsed_data, field):
     result = {"Story Number": list(range(len(next(iter(parsed_data.values())))))}
     for model, responses in parsed_data.items():
