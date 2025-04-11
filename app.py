@@ -32,7 +32,29 @@ def load_data(file):
 
     return df
 
-
+def parse_json(df):
+    parsed_data = {}
+    fields = set()
+    for model in df.columns:
+        if model.lower() == "description":
+            continue  # Skip description column
+        parsed_data[model] = []
+        for x in df[model]:
+            if pd.isna(x):
+                parsed_data[model].append({})
+                continue
+            try:
+                parsed_obj = ast.literal_eval(x)
+                if isinstance(parsed_obj, dict):
+                    parsed_obj.pop("description", None)  # Just in case any survive
+                    parsed_data[model].append(parsed_obj)
+                    fields.update(parsed_obj.keys())
+                else:
+                    parsed_data[model].append({})
+            except (ValueError, SyntaxError):
+                parsed_data[model].append({})
+    fields.discard("description")
+    return parsed_data, sorted(fields)
 
 def field_level_view(parsed_data, field):
     result = {"Story Number": list(range(len(next(iter(parsed_data.values())))))}
