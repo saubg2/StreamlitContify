@@ -8,32 +8,47 @@ def load_data(file):
     return df
 
 
+def normalize_response(val):
+    """
+    Parses a value that might be a stringified dict, list of dicts, etc.
+    Returns a merged dict without 'description' keys.
+    """
+    if pd.isna(val):
+        return {}
+
+    try:
+        parsed = ast.literal_eval(val)
+        if isinstance(parsed, dict):
+            parsed.pop("description", None)
+            return parsed
+        elif isinstance(parsed, list):
+            combined = {}
+            for item in parsed:
+                if isinstance(item, dict):
+                    item.pop("description", None)
+                    combined.update(item)
+            return combined
+    except Exception:
+        return {}
+
+    return {}
+
+
 def parse_json(df):
     parsed_data = {}
     fields = set()
-    
+
     for model in df.columns:
         if model.lower() in ["description", "story number"]:
-            continue  # Skip description and story number columns
+            continue
 
         parsed_data[model] = []
-        for x in df[model]:
-            if pd.isna(x):
-                parsed_data[model].append({})
-                continue
+        for val in df[model]:
+            clean = normalize_response(val)
+            parsed_data[model].append(clean)
+            fields.update(clean.keys())
 
-            try:
-                parsed_obj = ast.literal_eval(x)
-                if isinstance(parsed_obj, dict):
-                    # Skip inner 'description' key
-                    parsed_obj.pop("description", None)
-                    parsed_data[model].append(parsed_obj)
-                    fields.update(k for k in parsed_obj.keys() if k != "description")
-                else:
-                    parsed_data[model].append({})
-            except Exception:
-                parsed_data[model].append({})
-
+    fields.discard("description")
     return parsed_data, sorted(fields)
 
 
