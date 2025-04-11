@@ -2,27 +2,32 @@ import streamlit as st
 import pandas as pd
 import ast
 
+
 def load_data(file):
     df = pd.read_csv(file, skipinitialspace=True, engine='python')
 
-    # Clean model columns by stripping out 'description' key before parsing
     for col in df.columns:
         if col.lower() in ["description", "story number"]:
             continue
+
         cleaned_col = []
         for val in df[col]:
             if pd.isna(val):
                 cleaned_col.append(val)
                 continue
-            try:
-                parsed = ast.literal_eval(val)
-                if isinstance(parsed, dict):
-                    parsed.pop("description", None)  # Remove the offending key
-                    cleaned_col.append(str(parsed))
-                else:
+            if isinstance(val, str) and val.strip().startswith("{"):
+                try:
+                    parsed = ast.literal_eval(val)
+                    if isinstance(parsed, dict):
+                        parsed.pop("description", None)
+                        cleaned_col.append(str(parsed))
+                    else:
+                        cleaned_col.append(val)
+                except Exception:
                     cleaned_col.append(val)
-            except Exception:
+            else:
                 cleaned_col.append(val)
+
         df[col] = cleaned_col
 
     return df
