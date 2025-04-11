@@ -6,32 +6,31 @@ def load_data(file):
     df = pd.read_csv(file, skipinitialspace=True, engine='python')
     return df
 
-def parse_json(df):
-    parsed_data = {}
-    fields = set()
-    for model in df.columns:
-        if model.lower() == "description":
-            continue  # Skip description column
-        parsed_data[model] = []
-        for x in df[model]:
-            if pd.isna(x):
-                parsed_data[model].append({})
+def load_data(file):
+    df = pd.read_csv(file, skipinitialspace=True, engine='python')
+
+    # Clean model columns by stripping out 'description' key before parsing
+    for col in df.columns:
+        if col.lower() in ["description", "story number"]:
+            continue
+        cleaned_col = []
+        for val in df[col]:
+            if pd.isna(val):
+                cleaned_col.append(val)
                 continue
             try:
-                parsed_obj = ast.literal_eval(x)  # Safely parse Python-style dict
-                if isinstance(parsed_obj, dict):
-                    parsed_obj.pop("description", None)  # Ignore description
-                    for k, v in parsed_obj.items():
-                        if isinstance(v, list):
-                            parsed_obj[k] = "; ".join(str(i) for i in v)
-                    parsed_data[model].append(parsed_obj)
-                    fields.update(parsed_obj.keys())
+                parsed = ast.literal_eval(val)
+                if isinstance(parsed, dict):
+                    parsed.pop("description", None)  # Remove the offending key
+                    cleaned_col.append(str(parsed))
                 else:
-                    parsed_data[model].append({})
-            except (ValueError, SyntaxError):
-                parsed_data[model].append({})
-    fields.discard("description")
-    return parsed_data, sorted(fields)
+                    cleaned_col.append(val)
+            except Exception:
+                cleaned_col.append(val)
+        df[col] = cleaned_col
+
+    return df
+
 
 def field_level_view(parsed_data, field):
     result = {"Story Number": list(range(len(next(iter(parsed_data.values())))))}
