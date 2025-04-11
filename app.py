@@ -21,6 +21,9 @@ def parse_json(df):
                 parsed_obj = ast.literal_eval(x)  # Safely parse Python-style dict
                 if isinstance(parsed_obj, dict):
                     parsed_obj.pop("description", None)  # Ignore description
+                    for k, v in parsed_obj.items():
+                        if isinstance(v, list):
+                            parsed_obj[k] = "; ".join(str(i) for i in v)
                     parsed_data[model].append(parsed_obj)
                     fields.update(parsed_obj.keys())
                 else:
