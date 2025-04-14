@@ -54,11 +54,14 @@ def parse_json(df):
 
 def format_value(val):
     """
-    Return 'N/A - <value>' if val is an unavailable indicator.
+    Return 'N/A - <value>' if val is an unavailable indicator (case-insensitive).
     """
-    unavailable_values = {'not available', 'none', 'Null','None', 'Not Disclosed', 'not specified', 'null'}
+    unavailable_values = {
+        'not available', 'none', 'not specified', 'null', 'not disclosed', ''
+    }
     if isinstance(val, str) and val.strip().lower() in unavailable_values:
-        return f"N/A - {val.strip()}"
+        clean_val = val.strip() or 'Blank'
+        return f"N/A - {clean_val}"
     return val
 
 
