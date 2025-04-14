@@ -52,17 +52,27 @@ def parse_json(df):
     return parsed_data, sorted(fields)
 
 
+def format_value(val):
+    """
+    Return 'N/A - <value>' if val is an unavailable indicator.
+    """
+    unavailable_values = {'not available', 'none', 'not specified', 'null'}
+    if isinstance(val, str) and val.strip().lower() in unavailable_values:
+        return f"N/A - {val.strip()}"
+    return val
+
+
 def field_level_view(parsed_data, field):
     result = {"Story Number": list(range(len(next(iter(parsed_data.values())))))}
     for model, responses in parsed_data.items():
-        result[model] = [response.get(field, "N/A") for response in responses]
+        result[model] = [format_value(response.get(field, "N/A")) for response in responses]
 
     df = pd.DataFrame(result)
 
     def highlight_values(row):
         colors = [""]
         for val in row[1:]:
-            if val == "N/A":
+            if isinstance(val, str) and val.startswith("N/A -"):
                 colors.append("background-color: lightgrey")
             else:
                 colors.append("background-color: lightgreen")
@@ -90,7 +100,7 @@ if uploaded_file:
     summary_data = {}
     for field in fields:
         _, field_df = field_level_view(parsed_data, field)
-        summary_data[field] = field_df.iloc[:, 1:].apply(lambda col: (col != "N/A").sum()).to_dict()
+        summary_data[field] = field_df.iloc[:, 1:].apply(lambda col: col.map(lambda x: not str(x).startswith("N/A -")).sum()).to_dict()
 
     summary_df = pd.DataFrame(summary_data).T
     st.dataframe(summary_df)
@@ -101,6 +111,6 @@ if uploaded_file:
         styled_df, field_df = field_level_view(parsed_data, field)
         st.dataframe(styled_df)
 
-        non_na_counts = field_df.iloc[:, 1:].apply(lambda col: (col != "N/A").sum())
+        non_na_counts = field_df.iloc[:, 1:].apply(lambda col: col.map(lambda x: not str(x).startswith("N/A -")).sum())
         st.write("#### Count of Non-NA Values:")
         st.write(non_na_counts.to_frame().T)
