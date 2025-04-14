@@ -112,7 +112,7 @@ if uploaded_file:
     for field in fields:
         st.write(f"### Field: {field}")
         styled_df, field_df = field_level_view(parsed_data, field)
-        st.dataframe(styled_df)
+        st.write(styled_df)
 
         non_na_counts = field_df.iloc[:, 1:].apply(lambda col: col.map(lambda x: not str(x).startswith("N/A -")).sum())
         st.write("#### Count of Non-NA Values:")
