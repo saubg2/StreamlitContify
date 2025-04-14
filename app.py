@@ -56,7 +56,7 @@ def format_value(val):
     """
     Return 'N/A - <value>' if val is an unavailable indicator.
     """
-    unavailable_values = {'not available', 'none', 'Null','None', 'Not Disclosed', "", 'not specified', 'null'}
+    unavailable_values = {'not available', 'none', 'Null','None', 'Not Disclosed', 'not specified', 'null'}
     if isinstance(val, str) and val.strip().lower() in unavailable_values:
         return f"N/A - {val.strip()}"
     return val
